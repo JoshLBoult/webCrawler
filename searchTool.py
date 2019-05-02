@@ -1,3 +1,13 @@
+# The structure of the inverted index and url index:
+#
+# url index(url_keys) as a dict: {1:root_url, 2:second url crawled, 3:third...}
+# 
+# inverted index(word_index) as a dict with values as arrays:
+# {
+# torch : [[1,2],[2,7],[5,1]...]
+# where the 1st index is the url_id and the 2nd is the number of occurences in that url
+# }
+
 import requests
 from bs4 import BeautifulSoup as BS
 import time
@@ -31,6 +41,13 @@ while True:
         website_queue = [website]
         crawled = []
 
+        # Create a dict to associate a url to a unique id
+        url_id = 1
+        url_keys = dict()
+
+        # Create a dict to store inverted index of keywords
+        word_index = dict()
+
         # Keep going through list while it is not empty
         while website_queue:
 
@@ -38,21 +55,48 @@ while True:
             url = website_queue.pop()
             crawled.append(url)
 
-            # Get the content of this url
-            request = requests.get(url)
-            # Create Beautiful Soup object from the request
-            with open(request) as html_doc:
-                soup = BS(html_doc)
+            # Check for unwanted urls
+            if "/trap" in url:
+                # Don't send a request to this url
+            elif "/sitemap" in url:
+                # Don't want to crawl the sitemap
+            else:
+                # Get the content of this url
+                request = requests.get(url)
+                # Create Beautiful Soup object from the response
+                with open(request) as html_doc:
+                    soup = BS(html_doc)
 
-            # Store frequency of words
-            # Find link tags, if new URL then add to queue (standard or priority)
-            for link in soup.find_all('a'):
-                link_tags.append(link.get('href'))
-            # Store index in a file
+                # Store frequency of words
+                word_list = soup.get_text().split()
 
-            # 5 second politeness window before next request
-            time.sleep(5)
+                for word in word_list:
+                    if word in word_index:
+                        # Check if it has an entry for this url_id
+                    else:
+                        word_index[word] = [[url_id, 1]]
 
+
+                # Find link tags, if it is a new URL, then add to the list
+                for link in soup.find_all('a'):
+                    link_url = link.get('href')
+                    if link_url in website_queue:
+                        # Do nothing, url already stored
+                    elif link_url in crawled:
+                        # Do nothing, url already crawled
+                    else:
+                        website_queue.append(link_url)
+
+                # Add url to url table and increment url_id
+                url_keys[url_id] = url
+                url_id = url_id + 1
+                # Store index and url table in a file
+
+                # 5 second politeness window before next request
+                time.sleep(5)
+
+        print('Index built\n')
+        ready_to_continue = False
         continue
 
     elif (command_list[0]=='load'):
