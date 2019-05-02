@@ -1,7 +1,7 @@
 # The structure of the inverted index and url index:
 #
 # url index(url_keys) as a dict: {1:root_url, 2:second url crawled, 3:third...}
-# 
+#
 # inverted index(word_index) as a dict with values as arrays:
 # {
 # torch : [[1,2],[2,7],[5,1]...]
@@ -11,6 +11,7 @@
 import requests
 from bs4 import BeautifulSoup as BS
 import time
+import json
 
 
 # Initial global variable values
@@ -70,11 +71,21 @@ while True:
                 # Store frequency of words
                 word_list = soup.get_text().split()
 
+                # Count occurences of each word into a temporary dict
+                word_count_dict = dict()
                 for word in word_list:
-                    if word in word_index:
-                        # Check if it has an entry for this url_id
+                    if word not in word_count_dict:
+                        word_count_dict[word] = 1
                     else:
-                        word_index[word] = [[url_id, 1]]
+                        word_count_dict[word] += 1
+
+                # Add word counts into full index
+                for key in word_count_dict:
+                    if key not in word_index:
+                        word_index[key] = [[url_id, word_count_dict[key]]]
+                    else:
+                        # Append the count from this url to a word's index
+                        word_index[key].append([url_id, word_count_dict[key]])
 
 
                 # Find link tags, if it is a new URL, then add to the list
@@ -90,10 +101,17 @@ while True:
                 # Add url to url table and increment url_id
                 url_keys[url_id] = url
                 url_id = url_id + 1
-                # Store index and url table in a file
 
                 # 5 second politeness window before next request
                 time.sleep(5)
+
+        # Store index and url table in a file
+        with open(dicts.txt, 'w') as file:
+            file.write(json.dumps([url_keys, word_index]))
+
+        # To read the file back...
+        # with open(dicts.txt, 'r') as file:
+        #     dict_list = json.load(file)
 
         print('Index built\n')
         ready_to_continue = False
