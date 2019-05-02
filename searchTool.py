@@ -10,13 +10,14 @@
 
 import requests
 from bs4 import BeautifulSoup as BS
+from bs4 import Comment
 import time
 import json
 
 
 # Initial global variable values
 ready_to_continue = True
-website = 'http://example.webscraping.com/'
+website = 'http://example.webscraping.com'
 
 while True:
 
@@ -51,7 +52,7 @@ while True:
 
         # Keep going through list while it is not empty
         while website_queue:
-
+            print(url_id)
             # Get the next url to crawl and add it to crawled list
             url = website_queue.pop()
             crawled.append(url)
@@ -59,14 +60,21 @@ while True:
             # Check for unwanted urls
             if "/trap" in url:
                 # Don't send a request to this url
+                pass
             elif "/sitemap" in url:
                 # Don't want to crawl the sitemap
+                pass
             else:
                 # Get the content of this url
                 request = requests.get(url)
                 # Create Beautiful Soup object from the response
-                with open(request) as html_doc:
-                    soup = BS(html_doc)
+                html_doc = request.content
+                soup = BS(html_doc, features="html.parser")
+
+                # Remove the comments and script tags from the soup
+                comments = soup.find_all(text=lambda text:isinstance(text, Comment))
+                for comment in comments:
+                    comment.extract()
 
                 # Store frequency of words
                 word_list = soup.get_text().split()
@@ -91,10 +99,13 @@ while True:
                 # Find link tags, if it is a new URL, then add to the list
                 for link in soup.find_all('a'):
                     link_url = link.get('href')
+                    link_url = website + link_url
                     if link_url in website_queue:
                         # Do nothing, url already stored
+                        pass
                     elif link_url in crawled:
                         # Do nothing, url already crawled
+                        pass
                     else:
                         website_queue.append(link_url)
 
