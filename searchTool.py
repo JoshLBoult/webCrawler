@@ -19,6 +19,10 @@ import json
 ready_to_continue = True
 website = 'http://example.webscraping.com'
 
+# Global variables for loading the inverted index
+page_key = dict()
+inverted_index = dict()
+
 while True:
 
     # Allow the user to pause before continuing with command options in some cases
@@ -116,31 +120,99 @@ while True:
                 # 5 second politeness window before next request
                 time.sleep(5)
 
+                # END WHILE
+
         # Store index and url table in a file
         with open(dicts.txt, 'w') as file:
             file.write(json.dumps([url_keys, word_index]))
-
-        # To read the file back...
-        # with open(dicts.txt, 'r') as file:
-        #     dict_list = json.load(file)
 
         print('Index built\n')
         ready_to_continue = False
         continue
 
+    # Load command
     elif (command_list[0]=='load'):
-        print('Not yet implemented...\n')
+
+        # Read in the file as a list of the two dicts
+        with open("dicts.txt", 'r') as file:
+            dict_list = json.load(file)
+
+        # Split the list to the two dicts
+        page_key = dict_list[0]
+        inverted_index = dict_list[1]
+
+        print('Loaded inverted index\n')
+        ready_to_continue = False
         continue
 
+    # Print command
     elif (command_list[0]=='print'):
-        print('Not yet implemented...\n')
+
+        # Check if inverted index has been loaded
+        if not bool(inverted_index):
+            print('No inverted index has been loaded\n')
+        # Check for correct command structure
+        elif len(command_list) != 2:
+            print('Incorrect number of arguments\n')
+            print('Input should be of the form:  print [word]\n')
+        # Print the inverted index for the given keyword
+        else:
+            keyword = command_list[1]
+            keyword_inverted_index = inverted_index[keyword]
+            print("Inverted index for " + keyword)
+            print(keyword_inverted_index)
+
+        ready_to_continue = False
         continue
 
+    # Find command
     elif (command_list[0]=='find'):
-        print('Not yet implemented...\n')
+        # Check if inverted index has been loaded
+        if not bool(inverted_index):
+            print('No inverted index has been loaded\n')
+        # Check for correct command structure
+        elif len(command_list) < 2:
+            print('Incorrect number of arguments\n')
+            print('Input should be of the form:  find [word1] [word2]...[wordk]\n')
+        # Find the relevant pages for the search term
+        else:
+            # Skip the first entry which is the 'find' command
+            command_iterable = iter(command_list)
+            next(command_iterable)
+            # Create an index based on the first keyword
+            first_keyword = next(command_iterable)
+            keyword_inverted_index = inverted_index[first_keyword]
+
+            # If there are remaining keywords, iterate over them and compare
+            # to the inverted index of the first keyword incrementing a score and
+            # removing pages that don't contain all keywords
+            for keyword in command_iterable:
+                i = 0
+                while i < len(keyword_inverted_index)
+                    temp_index = inverted_index[keyword]
+                    for temp_id in temp_index:
+                        # The page of this keyword doesn't appear in the current
+                        # filtered list from previous keywords, so we ignore it
+                        if temp_id[0] < keyword_inverted_index[i]:
+                            pass
+                        # The page matches a page in the current filtered list
+                        # so increment the stored score
+                        elif temp_id[0] == keyword_inverted_index[i][0]:
+                            keyword_inverted_index[i][1] = keyword_inverted_index[i][1] + temp_id[1]
+                            break
+                        # Remove this entry from the filtered list
+                        else:
+                            keyword_inverted_index[i].remove()
+                            break
+
+            print("Search has found the following pages: ")
+            for i in keyword_inverted_index:
+                print(page_key[i[0]])
+
+        ready_to_continue = False
         continue
 
-    # Option to get out of the infinite program loop
+    # Quit option to get out of the infinite program loop
     elif (command_list[0]=='quit'):
         break
 
