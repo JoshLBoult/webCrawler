@@ -184,7 +184,7 @@ while True:
             keyword_inverted_index = inverted_index[first_keyword]
 
             # If there are remaining keywords, iterate over them and compare
-            # to the inverted index of the first keyword incrementing a score and
+            # to the inverted index of the first keyword. Increment the score and
             # removing pages that don't contain all keywords
             for keyword in command_iterable:
                 i = 0
@@ -194,18 +194,26 @@ while True:
                         # The page of this keyword doesn't appear in the current
                         # filtered list from previous keywords, so we ignore it
                         if temp_id[0] < keyword_inverted_index[i]:
-                            pass
+                            continue
                         # The page matches a page in the current filtered list
                         # so increment the stored score
                         elif temp_id[0] == keyword_inverted_index[i][0]:
                             keyword_inverted_index[i][1] = keyword_inverted_index[i][1] + temp_id[1]
+                            i += 1
                             break
                         # Remove this entry from the filtered list
                         else:
                             keyword_inverted_index[i].remove()
+                            i += 1
                             break
 
             print("Search has found the following pages: ")
+            # Sort the list before printing based on the second value of each element (the score)
+            # First a function to use as the key in sorting, to get the second element
+            def scoreSort(element):
+                return element[1]
+            keyword_inverted_index.sort(key = scoreSort, reverse = True)
+            # Print the list
             for i in keyword_inverted_index:
                 print(page_key[i[0]])
 
