@@ -55,11 +55,14 @@ while True:
         word_index = dict()
 
         # Keep going through list while it is not empty
+        
+        # for i in range(100): # This can be used instead of the while loop,
+        # which often takes a long time
         while website_queue:
-            print(url_id)
             # Get the next url to crawl and add it to crawled list
             url = website_queue.pop()
             crawled.append(url)
+            print(str(url_id) + ' : ' + url)
 
             # Check for unwanted urls
             if "/trap" in url:
@@ -79,6 +82,8 @@ while True:
                 comments = soup.find_all(text=lambda text:isinstance(text, Comment))
                 for comment in comments:
                     comment.extract()
+                for script in soup.find_all('script'):
+                    script.extract()
 
                 # Store frequency of words
                 word_list = soup.get_text().split()
@@ -123,7 +128,8 @@ while True:
                 # END WHILE
 
         # Store index and url table in a file
-        with open(dicts.txt, 'w') as file:
+        print(url_keys)
+        with open("dicts.txt", 'w') as file:
             file.write(json.dumps([url_keys, word_index]))
 
         print('Index built\n')
@@ -158,15 +164,19 @@ while True:
         # Print the inverted index for the given keyword
         else:
             keyword = command_list[1]
-            keyword_inverted_index = inverted_index[keyword]
-            print("Inverted index for " + keyword)
-            print(keyword_inverted_index)
+            try:
+                keyword_inverted_index = inverted_index[keyword]
+                print("Inverted index for " + keyword)
+                print(keyword_inverted_index)
+            except KeyError as err:
+                print('This word does not exist')
 
         ready_to_continue = False
         continue
 
     # Find command
     elif (command_list[0]=='find'):
+        keyword_inverted_index = dict()
         # Check if inverted index has been loaded
         if not bool(inverted_index):
             print('No inverted index has been loaded\n')
@@ -181,19 +191,28 @@ while True:
             next(command_iterable)
             # Create an index based on the first keyword
             first_keyword = next(command_iterable)
-            keyword_inverted_index = inverted_index[first_keyword]
+            try:
+                keyword_inverted_index = inverted_index[first_keyword]
+            except KeyError as err:
+                print('The word %s does not exist' % first_keyword)
+                continue
 
             # If there are remaining keywords, iterate over them and compare
             # to the inverted index of the first keyword. Increment the score and
             # removing pages that don't contain all keywords
             for keyword in command_iterable:
                 i = 0
-                while i < len(keyword_inverted_index)
-                    temp_index = inverted_index[keyword]
+                while i < len(keyword_inverted_index):
+                    try:
+                        temp_index = inverted_index[keyword]
+                    except KeyError as err:
+                        print('The word %s does not exist' % keyword)
+                        i += 1
+                        continue
                     for temp_id in temp_index:
                         # The page of this keyword doesn't appear in the current
                         # filtered list from previous keywords, so we ignore it
-                        if temp_id[0] < keyword_inverted_index[i]:
+                        if temp_id[0] < keyword_inverted_index[i][0]:
                             continue
                         # The page matches a page in the current filtered list
                         # so increment the stored score
@@ -215,7 +234,7 @@ while True:
             keyword_inverted_index.sort(key = scoreSort, reverse = True)
             # Print the list
             for i in keyword_inverted_index:
-                print(page_key[i[0]])
+                print(page_key[str(i[0])])
 
         ready_to_continue = False
         continue
